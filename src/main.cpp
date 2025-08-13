@@ -41,7 +41,8 @@ const int ButtonLed[3][4] = {{BUTTON_YELLOW, BUTTON_GREEN, BUTTON_RED, BUTTON_BL
 /*States*/
 int state = 0;
 #define STATE_INIT 0
-#define STATE_START_GAME 1
+#define STATE_GENERATE_GAME 1
+#define STATE_START_GAME 2
 #define STATE_PLAY_LEVEL 10
 #define STATE_READ_LEVEL 11
 #define STATE_GAME 50
@@ -50,12 +51,19 @@ int state = 0;
 int buttonPlayTime = 1000; //ms
 int level = 0;
 bool gameOver = false;
-int gameValues[10] = {1,0,4,2,3,2,3,1,0,2};
+int gameValues[10] = {1,0,3,2,3,2,3,1,0,2};
 
 void setButtonLeds(bool onOff);   //schaltet alle Lampen ein
 void setButtonLed(int buttonLed, bool onOff);
 void playButton(int button);
 int readButton();
+void printStartUpScreen();
+void printGenerateScreen();
+void printStartScreen();
+void printLevelScreen(int actLevelValue);
+void printPlayScreen();
+void printGreatScreen();
+void printGameOverScreen(int actLevelValue);
 
 
 void setup() {
@@ -105,48 +113,68 @@ void loop() {
   {
   case STATE_INIT:
     level = 0;
+    Serial.println("Init");
+    printStartUpScreen();
     //setButtonLeds(LED_ON);
     //delay(500);
     setButtonLed(ButtonLed[1][0], LED_ON);
     delay(500);
     setButtonLed(ButtonLed[1][0], LED_OFF);
     delay(500);
-    state = STATE_START_GAME;
+    state = STATE_GENERATE_GAME;
+    break;
+
+  case STATE_GENERATE_GAME:
+    setButtonLeds(LED_OFF);
+    printGenerateScreen();
+    delay(500);
+    state = STATE_PLAY_LEVEL;
     break;
 
   case STATE_START_GAME:
     setButtonLeds(LED_OFF);
     delay(500);
+    printStartScreen();
     state = STATE_PLAY_LEVEL;
     break;
 
   case STATE_PLAY_LEVEL:
+      printLevelScreen(level);
       for (int i = 0; i <= level; i++)
       {
-        playButton(gameValues[level]);
+        playButton(gameValues[i]);
       }      
       state = STATE_READ_LEVEL;
+      printPlayScreen();
     break;
 
   case STATE_READ_LEVEL:
       if(readLevel<= level){
-        if(readButton() == gameValues[readLevel]){
+        int actButtonValue = readButton();
+        if(actButtonValue == gameValues[readLevel]){
           Serial.println("Korrekt");
           readLevel++;
-        }else if(readButton() == -1){
+        }else if(actButtonValue == -1){
           Serial.print(".");
-        }else if(readButton() == 99){
+        }else {
           Serial.println("Falsch, Game Over");
           state = STATE_GAME_OVER;
         }
       }else{
+        printGreatScreen();
         level++;
+        readLevel = 0;
         state = STATE_PLAY_LEVEL;
       }     
     break;
 
   case STATE_GAME_OVER:
-      state = STATE_INIT;
+      printGameOverScreen(level);
+      if(readButton() != -1){
+        state = STATE_INIT;
+      }
+    break;
+
   default:
     break;
   }
@@ -186,15 +214,19 @@ int readButton(){
   switch (buttonvalue)
   {
   case 14:
+    playButton(0);
     return 0;
     break;
   case 11:
+    playButton(1);
     return 1;
     break;
   case 13:
+    playButton(2);
     return 2;
     break;
   case 7:
+    playButton(3);
     return 3;
     break;
   case 15:
@@ -204,4 +236,89 @@ int readButton(){
     return 99;
     break;
   }
+}
+
+void printStartUpScreen(){
+  display.clearDisplay();
+
+  display.setTextSize(1);             // Normal 1:1 pixel scale
+  display.setTextColor(SSD1306_WHITE);        // Draw white text
+  display.setCursor(0,0);             // Start at top-left corner
+  display.println(F("Hallo Spieler"));
+  display.println("Viel Glueck!");
+
+  display.display();
+  delay(2000);
+}
+
+
+void printGenerateScreen(){
+  display.clearDisplay();
+  display.setTextSize(1);             // Normal 1:1 pixel scale
+  display.setTextColor(SSD1306_WHITE);        // Draw white text
+  display.setCursor(0,0);             // Start at top-left corner
+  display.println(F("Level werden"));
+  display.println("generiert");
+  display.display();
+  delay(2000);
+}
+
+
+void printStartScreen(){
+  display.clearDisplay();
+  display.setTextSize(3);             // Normal 1:1 pixel scale
+  display.setTextColor(SSD1306_WHITE);        // Draw white text
+  display.setCursor(0,0);             // Start at top-left corner
+  display.println(F("Start"));
+  display.display();
+  delay(2000);
+}
+
+void printLevelScreen(int actLevelValue){
+  display.clearDisplay();
+  display.setTextSize(2);             // Normal 1:1 pixel scale
+  display.setTextColor(SSD1306_WHITE);        // Draw white text
+  display.setCursor(0,0);             // Start at top-left corner
+  display.print(F("Level: "));
+  display.println(actLevelValue + 1);
+  display.display();
+  delay(2000);
+}
+
+void printPlayScreen(){
+  display.clearDisplay();
+  display.setTextSize(3);             // Normal 1:1 pixel scale
+  display.setTextColor(SSD1306_WHITE);        // Draw white text
+  display.setCursor(0,0);             // Start at top-left corner
+  display.println(F("Play!"));
+  display.display();
+}
+
+void printGreatScreen(){
+  display.clearDisplay();
+  display.setTextSize(3);             // Normal 1:1 pixel scale
+  display.setTextColor(SSD1306_WHITE);        // Draw white text
+  display.setCursor(0,0);             // Start at top-left corner
+  display.println(F("Great!!"));
+  display.display();
+  delay(2000);
+}
+
+void printGameOverScreen(int actLevelValue){
+  display.clearDisplay();
+  display.setTextSize(2);             // Normal 1:1 pixel scale
+  display.setTextColor(SSD1306_WHITE);        // Draw white text
+  display.setCursor(0,0);             // Start at top-left corner
+  display.println(F("Game"));
+  display.println("Over :-(");
+  display.display();
+  delay(2000);
+  display.clearDisplay();
+  display.setTextSize(2);             // Normal 1:1 pixel scale
+  display.setTextColor(SSD1306_WHITE);        // Draw white text
+  display.setCursor(0,0);             // Start at top-left corner
+  display.print(F("Level: "));
+  display.println(actLevelValue + 1);
+  display.display();
+  delay(1000);
 }
