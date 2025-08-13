@@ -7,7 +7,7 @@
 
 
 /*Buzzer Config*/
-#define PIN_PWM_LED_Pwm 1
+#define PIN_PWM_BUZZER 44
 #define PWM_CHANNEL_BUZZER 1
 #define PWM_RESOLUTION 8
 int pwm_frequenz = 500;
@@ -23,10 +23,10 @@ PCF8574 pcf8574(0x38);
 #define LED_ON false
 #define LED_OFF true 
 
-#define BUTTON_YELLOW 5
-#define BUTTON_GREEN 4
-#define BUTTON_RED 7
-#define BUTTON_BLUE 6
+#define BUTTON_YELLOW 4
+#define BUTTON_GREEN 6
+#define BUTTON_RED 5
+#define BUTTON_BLUE 7
 const int Button[4] ={BUTTON_YELLOW, BUTTON_GREEN, BUTTON_RED, BUTTON_BLUE};
 
 #define BUTTON_LED_YELLOW 0
@@ -34,7 +34,9 @@ const int Button[4] ={BUTTON_YELLOW, BUTTON_GREEN, BUTTON_RED, BUTTON_BLUE};
 #define BUTTON_LED_RED 1
 #define BUTTON_LED_BLUE 3
 
-const int ButtonLed[2][4] = {{BUTTON_YELLOW, BUTTON_GREEN, BUTTON_RED, BUTTON_BLUE},{BUTTON_LED_YELLOW, BUTTON_LED_GREEN, BUTTON_LED_RED, BUTTON_LED_BLUE}};
+const int ButtonLed[3][4] = {{BUTTON_YELLOW, BUTTON_GREEN, BUTTON_RED, BUTTON_BLUE},
+  {BUTTON_LED_YELLOW, BUTTON_LED_GREEN, BUTTON_LED_RED, BUTTON_LED_BLUE},
+  {400, 800, 1600, 3200}};
 
 /*States*/
 int state = 0;
@@ -59,8 +61,8 @@ int readButton();
 void setup() {
 
   ledcSetup(PWM_CHANNEL_BUZZER, pwm_frequenz, PWM_RESOLUTION);
-  ledcAttachPin(PIN_PWM_LED_Pwm, PWM_CHANNEL_BUZZER);
-  ledcWrite(PWM_CHANNEL_BUZZER, 128);
+  ledcAttachPin(PIN_PWM_BUZZER, PWM_CHANNEL_BUZZER);
+  ledcWrite(PWM_CHANNEL_BUZZER, 0);
 
     // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   if(!display.begin(SSD1306_SWITCHCAPVCC)) {
@@ -169,8 +171,12 @@ void setButtonLed(int buttonLed, bool onOff){
 
 void playButton(int button){
     pcf8574.write(ButtonLed[1][button], LED_ON);
+    ledcSetup(PWM_CHANNEL_BUZZER, ButtonLed[2][button], PWM_RESOLUTION);
+    ledcAttachPin(PIN_PWM_BUZZER, PWM_CHANNEL_BUZZER);
+    ledcWrite(PWM_CHANNEL_BUZZER, 125);
     delay(buttonPlayTime);
     pcf8574.write(ButtonLed[1][button], LED_OFF);
+    ledcWrite(PWM_CHANNEL_BUZZER, 0);
 }
 
 int readButton(){
